@@ -10,3 +10,16 @@ DECISION:
 AI Recommendation: Excellent technical indicators with MACD crossing signal line. Buying on upward momentum.
 
 <!-- ENTRY_END -->
+[2026-06-17 | AAPL | Hold | pending]
+
+DECISION:
+Error code: 401 - {'error': {'message': 'Incorrect API key provided: test. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
+
+<!-- ENTRY_END -->
+
+[2026-06-17 | TSLA | Hold | pending]
+
+DECISION:
+Error code: 401 - {'error': {'message': 'Incorrect API key provided: test. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
+
+<!-- ENTRY_END -->

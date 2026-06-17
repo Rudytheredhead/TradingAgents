@@ -13,11 +13,12 @@ Jeśli LLM zwróci sygnał rynkowy sugerujący zakupy (np. "bullish"), decyduje 
 
 Punkt: Wdrożenie mechaniki Portfolio Memory
 
-1. Nowa klasa PortfolioMemory
-Dodano klasę `PortfolioMemory` w pliku `run.py`. Klasa ta jest odpowiedzialna za pobieranie historii decyzji agenta z pliku JSON (domyślnie results/continuous/memory.json), formatowanie jej w użyteczny i zwięzły kontekst stringowy dla LLMa, a następnie za zapisywanie nowych akcji w tym pliku po wygenerowaniu przez graf nowej decyzji.
+1. Oparcie Pamięci Portfela o wbudowany w architekturę docelowy TradingMemoryLog
+Usunięto własnoręczną klasę PortfolioMemory opartą o proste JSON.
+Zamiast tego, w pliku `run.py` zainicjowano `TradingAgentsGraph` z konfiguracją modyfikującą klucz `"memory_log_path"`, przypinając go w locie do wewnętrznej struktury `results/continuous/memory.log`.
 
 2. Integracja Pamięci
-Zmodyfikowano zachowanie OpenClaudeContinuousAgent. Agent pyta o `memory.get_context(ticker)` na początku procesu by połączyć obecny powód (`reason`) z historią z poprzednich dni. Informacja trafia wtedy do sztucznej inteligencji, pozwalając na jej naukę na starych błędach lub obserwacjach.
+Ponieważ `TradingAgentsGraph.propagate()` już domyślnie sam ładuje historię danego tickera z wykorzystaniem `self.memory_log.get_past_context(ticker)` oraz zapisuje po udanym wygenerowaniu sygnału - jedynym potrzebnym zabiegiem (po podaniu ścieżki pliku w konfiguratorze) było dodanie bloku `store_decision(...)` wewnątrz wyjątków catch bloku kodu, zapobiegając utracie pamięci o błędach w połączeniach API. Zmiany zostały rygorystycznie oparte na recenzji planu i testach modułów (PortfolioMemory). W trakcie pracy wygenerowano za pomocą mocków plik `memory.log` wraz z wcześniejszą historią działań pod AAPL oraz TSLA.
 
 3. Konfiguracja testowa
-Wzbogacono `PaperPortfolio` wpisując w atrybuty `positions` początkowe ilości akcji AAPL i TSLA oraz zmniejszono budżet w dolarach. Stworzono mockowy plik memory.json opisujący sztuczną, początkową historię z 15 i 16 Czerwca.
+Wzbogacono domyślną instancję `PaperPortfolio` wpisując w słownik `positions` początkowe ilości akcji AAPL oraz TSLA. Dodatkowo zmniejszono budżet w gotówce symulowanego portfela z 10000 USD do 5000 USD.

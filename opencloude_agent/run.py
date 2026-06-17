@@ -173,49 +173,6 @@ class MarketWatcher:
         }
 
 
-class PortfolioMemory:
-    def __init__(self, memory_file: Path | str):
-        self.memory_file = Path(memory_file)
-        self.memory_file.parent.mkdir(parents=True, exist_ok=True)
-        self._memory_data: dict[str, list[dict[str, Any]]] = self._load()
-
-    def _load(self) -> dict[str, list[dict[str, Any]]]:
-        if not self.memory_file.exists():
-            return {}
-        try:
-            with open(self.memory_file, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except json.JSONDecodeError:
-            return {}
-
-    def get_context(self, ticker: str) -> str:
-        records = self._memory_data.get(ticker, [])
-        if not records:
-            return ""
-
-        context_lines = [f"Past memory for {ticker}:"]
-        # Limit to the last 3 interactions to avoid prompt bloat
-        for record in records[-3:]:
-            date = record.get("date", "Unknown Date")
-            action = record.get("action", "Unknown Action")
-            reason = record.get("reason", "No reason provided")
-            context_lines.append(f" - [{date}] Action: {action} | Reason: {reason}")
-        return "\n".join(context_lines)
-
-    def append_decision(self, ticker: str, action: str, reason: str, date: str) -> None:
-        if ticker not in self._memory_data:
-            self._memory_data[ticker] = []
-
-        self._memory_data[ticker].append({
-            "date": date,
-            "action": action,
-            "reason": reason
-        })
-
-        with open(self.memory_file, "w", encoding="utf-8") as f:
-            json.dump(self._memory_data, f, indent=2, ensure_ascii=False)
-
-
 class OpportunityScanner:
     def __init__(self, max_candidates: int = 3):
         self.max_candidates = max_candidates
@@ -350,10 +307,14 @@ class OpenClaudeContinuousAgent:
         self.scanner = OpportunityScanner(max_candidates=max_candidates)
         self.risk_guard = RiskGuard()
         self.report_writer = ReportWriter(self.results_dir)
-        self.memory = PortfolioMemory(self.results_dir / "continuous" / "memory.json")
+        from tradingagents.default_config import DEFAULT_CONFIG
+        custom_config = dict(DEFAULT_CONFIG)
+        custom_config["memory_log_path"] = str(self.results_dir / "continuous" / "memory.log")
+
         self.agent_graph = TradingAgentsGraph(
             selected_analysts=("market", "social", "news", "fundamentals"),
             debug=False,
+            config=custom_config
         )
 
     def run_once(self) -> dict[str, Any]:
@@ -401,14 +362,16 @@ class OpenClaudeContinuousAgent:
                 # Fallback if there's an error in AI graph
                 signal = {"signal": "error"}
                 agent_state = {}
+                # Record the error state to memory to force initialization of memory_log if missing
+                self.agent_graph.memory_log.store_decision(
+                    ticker=ticker,
+                    trade_date=trade_date,
+                    final_trade_decision=str(e),
+                )
 
             # Assuming the signal output handles 'bullish'/'bearish'/'neutral' strings or dicts
             action = "hold"
-
-            # Fetch historical context for ticker
-            historical_context = self.memory.get_context(ticker)
-            rationale_context = f"{opportunity.reason}\n\n{historical_context}" if historical_context else opportunity.reason
-            rationale = rationale_context
+            rationale = opportunity.reason
 
             if isinstance(signal, str):
                 if "bullish" in signal.lower():
@@ -429,10 +392,7 @@ class OpenClaudeContinuousAgent:
                 # Add AI specific rationale if available
                 ai_rationale = agent_state.get("final_trade_decision", {}).get("reasoning")
                 if ai_rationale:
-                    rationale = f"{rationale_context} | AI: {ai_rationale}"
-
-            # Save decision back to memory
-            self.memory.append_decision(ticker, action, rationale, utc_now().isoformat() + "Z")
+                    rationale = f"{opportunity.reason} | AI: {ai_rationale}"
 
             decisions.append(
                 {
