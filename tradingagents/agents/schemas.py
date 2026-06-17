@@ -21,7 +21,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 # ---------------------------------------------------------------------------
 # Shared rating types
@@ -136,13 +136,16 @@ class TraderProposal(BaseModel):
         description="Optional sizing guidance, e.g. '5% of portfolio'.",
     )
 
-    @field_validator("entry_price", "stop_loss", mode="before")
+    @model_validator(mode="before")
     @classmethod
-    def parse_optional_float(cls, v: Any) -> Any:
+    def parse_optional_floats(cls, data: Any) -> Any:
         """Coerce 'None' or empty strings from weak LLMs into actual JSON nulls."""
-        if isinstance(v, str) and v.strip().lower() in ("none", "null", "n/a", "nan", ""):
-            return None
-        return v
+        if isinstance(data, dict):
+            for key in ("entry_price", "stop_loss"):
+                v = data.get(key)
+                if isinstance(v, str) and v.strip().lower() in ("none", "null", "n/a", "nan", ""):
+                    data[key] = None
+        return data
 
 
 def render_trader_proposal(proposal: TraderProposal) -> str:
@@ -212,13 +215,16 @@ class PortfolioDecision(BaseModel):
         description="Optional recommended holding period, e.g. '3-6 months'.",
     )
 
-    @field_validator("price_target", mode="before")
+    @model_validator(mode="before")
     @classmethod
-    def parse_optional_float(cls, v: Any) -> Any:
+    def parse_optional_floats(cls, data: Any) -> Any:
         """Coerce 'None' or empty strings from weak LLMs into actual JSON nulls."""
-        if isinstance(v, str) and v.strip().lower() in ("none", "null", "n/a", "nan", ""):
-            return None
-        return v
+        if isinstance(data, dict):
+            for key in ("price_target",):
+                v = data.get(key)
+                if isinstance(v, str) and v.strip().lower() in ("none", "null", "n/a", "nan", ""):
+                    data[key] = None
+        return data
 
 
 def render_pm_decision(decision: PortfolioDecision) -> str:
