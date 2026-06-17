@@ -10,3 +10,14 @@ Dodano import klasy `TradingAgentsGraph` z modułu `tradingagents.graph.trading_
 - Zmodyfikowano metodę `_make_paper_decisions`. Zastąpiono starą i twardo zakodowaną logikę oceny `action = "buy" if opportunity.score >= 60 else "hold"`.
 Obecnie funkcja iteracyjnie wywołuje sztuczną inteligencję komendą `agent_state, signal = self.agent_graph.propagate(ticker, str(utc_now().date()))` dla każdej wykrytej szansy rynkowej.
 Jeśli LLM zwróci sygnał rynkowy sugerujący zakupy (np. "bullish"), decyduje się na "buy". Kod wykorzystuje również wygenerowane przez agenta uzasadnienie i zapisuje je w strukturach decyzji. Dodano zabezpieczenie try-except jako fallback w przypadku błędu LLM.
+
+Punkt: Wdrożenie mechaniki Portfolio Memory
+
+1. Nowa klasa PortfolioMemory
+Dodano klasę `PortfolioMemory` w pliku `run.py`. Klasa ta jest odpowiedzialna za pobieranie historii decyzji agenta z pliku JSON (domyślnie results/continuous/memory.json), formatowanie jej w użyteczny i zwięzły kontekst stringowy dla LLMa, a następnie za zapisywanie nowych akcji w tym pliku po wygenerowaniu przez graf nowej decyzji.
+
+2. Integracja Pamięci
+Zmodyfikowano zachowanie OpenClaudeContinuousAgent. Agent pyta o `memory.get_context(ticker)` na początku procesu by połączyć obecny powód (`reason`) z historią z poprzednich dni. Informacja trafia wtedy do sztucznej inteligencji, pozwalając na jej naukę na starych błędach lub obserwacjach.
+
+3. Konfiguracja testowa
+Wzbogacono `PaperPortfolio` wpisując w atrybuty `positions` początkowe ilości akcji AAPL i TSLA oraz zmniejszono budżet w dolarach. Stworzono mockowy plik memory.json opisujący sztuczną, początkową historię z 15 i 16 Czerwca.

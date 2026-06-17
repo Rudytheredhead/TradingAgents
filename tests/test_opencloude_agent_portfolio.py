@@ -1,15 +1,17 @@
-from opencloude_agent.portfolio import PaperPortfolio
+from opencloude_agent.run import PaperPortfolio
 
 
-def test_paper_portfolio_starts_with_ten_thousand_usd():
+def test_paper_portfolio_starts_with_five_thousand_usd():
     portfolio = PaperPortfolio()
 
-    assert portfolio.cash_usd == 10000.0
-    assert portfolio.to_dict()["total_value_usd"] == 10000.0
+    assert portfolio.cash_usd == 5000.0
+    # TSLA 10, AAPL 15
+    assert "AAPL" in portfolio.positions
+    assert "TSLA" in portfolio.positions
 
 
 def test_paper_portfolio_simulates_buy_and_sell():
-    portfolio = PaperPortfolio()
+    portfolio = PaperPortfolio(cash_usd=10000.0, positions={})
 
     cost = portfolio.simulate_buy("AAPL", 10, 100)
     assert cost == 1000.0
