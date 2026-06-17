@@ -1,0 +1,58 @@
+{
+  "portfolio": {
+    "cash_usd": 25000.0,
+    "positions": {
+      "AAPL": 15,
+      "NVDA": 20,
+      "MSFT": 10
+    },
+    "equity_usd": 4439.250183105469,
+    "total_value_usd": 29439.25018310547
+  },
+  "history": [
+    {
+      "ticker": "AAPL",
+      "action": "buy",
+      "quantity": 15,
+      "estimated_price": 170.5,
+      "rationale": "Strong earnings report and positive momentum.",
+      "timestamp": "2023-10-01T14:30:00Z"
+    },
+    {
+      "ticker": "NVDA",
+      "action": "buy",
+      "quantity": 20,
+      "estimated_price": 450.25,
+      "rationale": "AI sector growth and dominant market share.",
+      "timestamp": "2023-10-05T10:15:00Z"
+    },
+    {
+      "ticker": "MSFT",
+      "action": "buy",
+      "quantity": 10,
+      "estimated_price": 330.1,
+      "rationale": "Cloud revenue expansion and strategic partnerships.",
+      "timestamp": "2023-10-10T09:45:00Z"
+    },
+    {
+      "ticker": "AAPL",
+      "action": "hold",
+      "quantity": 0,
+      "estimated_price": 295.95001220703125,
+      "estimated_value_usd": 0.0,
+      "rationale": "AAPL: 20d return -1.01%; relative strength -2.00%; volume 42,329,351",
+      "risk_level": "paper_only",
+      "timestamp": "2026-06-17T21:48:35.079471+00:00Z"
+    },
+    {
+      "ticker": "AAPL",
+      "action": "hold",
+      "quantity": 0,
+      "estimated_price": 295.95001220703125,
+      "estimated_value_usd": 0.0,
+      "rationale": "AAPL: 20d return -1.01%; relative strength -2.00%; volume 42,329,351",
+      "risk_level": "paper_only",
+      "timestamp": "2026-06-17T22:00:02.443280+00:00Z"
+    }
+  ]
+}

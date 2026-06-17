@@ -1,4 +1,4 @@
-from opencloude_agent.opportunity_scanner import OpportunityScanner
+from opencloude_agent.run import OpportunityScanner
 
 
 def test_opportunity_scanner_limits_candidates():

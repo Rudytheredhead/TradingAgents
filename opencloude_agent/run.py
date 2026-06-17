@@ -40,10 +40,65 @@ class Opportunity:
         }
 
 
+class AgentMemory:
+    def __init__(self, filepath: str | Path = "opencloude_agent/memory.json"):
+        self.filepath = Path(filepath)
+        self.data = self._load()
+
+    def _load(self) -> dict[str, Any]:
+        if self.filepath.exists():
+            try:
+                with open(self.filepath, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except json.JSONDecodeError:
+                pass
+        return {"portfolio": {"cash_usd": 10000.0, "positions": {}}, "history": []}
+
+    def save(self) -> None:
+        with open(self.filepath, "w", encoding="utf-8") as f:
+            json.dump(self.data, f, indent=2, ensure_ascii=False)
+
+    def get_portfolio(self) -> dict[str, Any]:
+        return self.data.get("portfolio", {"cash_usd": 10000.0, "positions": {}})
+
+    def update_portfolio(self, portfolio_dict: dict[str, Any]) -> None:
+        self.data["portfolio"] = portfolio_dict
+        self.save()
+
+    def add_history(self, decision: dict[str, Any]) -> None:
+        if "history" not in self.data:
+            self.data["history"] = []
+        self.data["history"].append(decision)
+        self.save()
+
+    def get_ticker_context(self, ticker: str, limit: int = 3) -> str:
+        history = self.data.get("history", [])
+        ticker_history = [item for item in history if item.get("ticker") == ticker]
+        if not ticker_history:
+            return ""
+
+        context_lines = [f"Previous decisions for {ticker}:"]
+        for item in ticker_history[-limit:]:
+            action = item.get("action", "unknown")
+            price = item.get("estimated_price", 0.0)
+            date = item.get("timestamp", "").split("T")[0]
+            rationale = item.get("rationale", "")
+            context_lines.append(f"- {date}: {action.upper()} @ ${price:.2f}. Reason: {rationale}")
+
+        return "\n".join(context_lines)
+
+
 @dataclass(slots=True)
 class PaperPortfolio:
     cash_usd: float = 10_000.0
     positions: dict[str, float] = field(default_factory=dict)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "PaperPortfolio":
+        return cls(
+            cash_usd=data.get("cash_usd", 10_000.0),
+            positions=data.get("positions", {})
+        )
 
     def to_dict(self, latest_prices: dict[str, float] | None = None) -> dict[str, Any]:
         latest_prices = latest_prices or {}
@@ -303,7 +358,8 @@ class OpenClaudeContinuousAgent:
     ):
         self.results_dir = Path(results_dir)
         self.watchlist = watchlist or list(DEFAULT_WATCHLIST)
-        self.portfolio = PaperPortfolio()
+        self.memory = AgentMemory()
+        self.portfolio = PaperPortfolio.from_dict(self.memory.get_portfolio())
         self.market_watcher = MarketWatcher()
         self.scanner = OpportunityScanner(max_candidates=max_candidates)
         self.risk_guard = RiskGuard()
@@ -350,11 +406,15 @@ class OpenClaudeContinuousAgent:
             if not price:
                 continue
 
+            # Retrieve past context from AgentMemory
+            past_context = self.memory.get_ticker_context(ticker)
+
             # Use AI agent for the decision
             trade_date = str(utc_now().date())
             self.report_writer.append_text("signal.txt", f"{utc_now().time()   }\n")
             try:
-                agent_state, signal = self.agent_graph.propagate(ticker, trade_date)
+                # Agent graph gets context via the configured memory_log
+                agent_state, signal = self.agent_graph.propagate(ticker, trade_date, override_past_context=past_context)
             except Exception as e:
                 # Fallback if there's an error in AI graph
                 signal = {"signal": "error"}
@@ -407,18 +467,24 @@ class OpenClaudeContinuousAgent:
                 if ai_rationale:
                     rationale = f"{opportunity.reason} | AI: {ai_rationale}"
 
-            decisions.append(
-                {
-                    "ticker": ticker,
-                    "action": action,
-                    "quantity": quantity,
-                    "estimated_price": float(price),
-                    "estimated_value_usd": value,
-                    "rationale": rationale,
-                    "risk_level": "paper_only",
-                    "timestamp": utc_now().isoformat() + "Z",
-                }
-            )
+            decision_data = {
+                "ticker": ticker,
+                "action": action,
+                "quantity": quantity,
+                "estimated_price": float(price),
+                "estimated_value_usd": value,
+                "rationale": rationale,
+                "risk_level": "paper_only",
+                "timestamp": utc_now().isoformat() + "Z",
+            }
+            decisions.append(decision_data)
+
+            # Record history memory
+            self.memory.add_history(decision_data)
+
+        # Update global portfolio memory state
+        latest_prices = self._latest_prices(snapshot) if hasattr(self, "_latest_prices") else {}
+        self.memory.update_portfolio(self.portfolio.to_dict(latest_prices=latest_prices))
         return decisions
 
     def _persist_cycle(
