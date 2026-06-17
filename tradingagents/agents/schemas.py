@@ -19,13 +19,24 @@ so that:
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Literal
+from typing import Any, Literal, Annotated
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field
+from pydantic.functional_validators import BeforeValidator
 
 # ---------------------------------------------------------------------------
 # Shared rating types
 # ---------------------------------------------------------------------------
+
+
+
+def parse_optional_float(v: Any) -> Any:
+    """Coerce 'None' or empty strings from weak LLMs into actual JSON nulls."""
+    if isinstance(v, str) and v.strip().lower() in ("none", "null", "n/a", "nan", ""):
+        return None
+    return v
+
+OptionalFloat = Annotated[float | None, BeforeValidator(parse_optional_float)]
 
 
 class PortfolioRating(str, Enum):
@@ -123,11 +134,11 @@ class TraderProposal(BaseModel):
             "the research plan. Two to four sentences."
         ),
     )
-    entry_price: float | None = Field(
+    entry_price: OptionalFloat = Field(
         default=None,
         description="Optional entry price target in the instrument's quote currency.",
     )
-    stop_loss: float | None = Field(
+    stop_loss: OptionalFloat = Field(
         default=None,
         description="Optional stop-loss price in the instrument's quote currency.",
     )
@@ -136,16 +147,7 @@ class TraderProposal(BaseModel):
         description="Optional sizing guidance, e.g. '5% of portfolio'.",
     )
 
-    @model_validator(mode="before")
-    @classmethod
-    def parse_optional_floats(cls, data: Any) -> Any:
-        """Coerce 'None' or empty strings from weak LLMs into actual JSON nulls."""
-        if isinstance(data, dict):
-            for key in ("entry_price", "stop_loss"):
-                v = data.get(key)
-                if isinstance(v, str) and v.strip().lower() in ("none", "null", "n/a", "nan", ""):
-                    data[key] = None
-        return data
+
 
 
 def render_trader_proposal(proposal: TraderProposal) -> str:
@@ -206,7 +208,7 @@ class PortfolioDecision(BaseModel):
             "incorporate them; otherwise rely solely on the current analysis."
         ),
     )
-    price_target: float | None = Field(
+    price_target: OptionalFloat = Field(
         default=None,
         description="Optional target price in the instrument's quote currency.",
     )
@@ -215,16 +217,7 @@ class PortfolioDecision(BaseModel):
         description="Optional recommended holding period, e.g. '3-6 months'.",
     )
 
-    @model_validator(mode="before")
-    @classmethod
-    def parse_optional_floats(cls, data: Any) -> Any:
-        """Coerce 'None' or empty strings from weak LLMs into actual JSON nulls."""
-        if isinstance(data, dict):
-            for key in ("price_target",):
-                v = data.get(key)
-                if isinstance(v, str) and v.strip().lower() in ("none", "null", "n/a", "nan", ""):
-                    data[key] = None
-        return data
+
 
 
 def render_pm_decision(decision: PortfolioDecision) -> str:
