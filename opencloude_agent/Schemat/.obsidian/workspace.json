@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Zapiski/Claude_Log.md",
+                "file": "Architecture/Risk Evaluation.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Claude_Log"
+              "title": "Risk Evaluation"
             }
           }
         ]
@@ -182,10 +182,11 @@
   },
   "active": "749ca0b8743d4018",
   "lastOpenFiles": [
-    "Results/Continuous/Watch Log.md",
-    "Zapiski/Claude_Log.md",
-    "Runtime/CLI Entry Points.md",
     "Architecture/Opportunity Scoring.md",
+    "Architecture/Agent Loop.md",
+    "Zapiski/Claude_Log.md",
+    "Results/Continuous/Watch Log.md",
+    "Runtime/CLI Entry Points.md",
     "CLAUDE.md",
     "Bez nazwy.md",
     "Witaj.md"

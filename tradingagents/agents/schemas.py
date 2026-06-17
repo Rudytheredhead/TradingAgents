@@ -139,6 +139,7 @@ class TraderProposal(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def parse_optional_floats(cls, data: Any) -> Any:
+        print(f"wrapper dziala {data}")
         """Coerce 'None' or empty strings from weak LLMs into actual JSON nulls."""
         if isinstance(data, dict):
             for key in ("entry_price", "stop_loss"):

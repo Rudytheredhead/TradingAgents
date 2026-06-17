@@ -10,3 +10,12 @@
 {'signal': 'error'}
 16:40:26.241904
 Overweight
+17:30:41.131415
+Hold
+17:49:46.779706
+{'message': 'Provider returned error', 'code': 504}
+{'signal': 'error'}
+18:22:09.973601
+Hold
+21:12:28.819954
+21:47:03.421810

@@ -309,7 +309,7 @@ class OpenClaudeContinuousAgent:
         self.risk_guard = RiskGuard()
         self.report_writer = ReportWriter(self.results_dir)
         self.agent_graph = TradingAgentsGraph(
-            selected_analysts=("market", "social", "news", "fundamentals"),
+            selected_analysts=("market", "news", "fundamentals"),
             debug=False,
         )
 
