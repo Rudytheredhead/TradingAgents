@@ -1,4 +1,4 @@
-from opencloude_agent.portfolio import PaperPortfolio
+from opencloude_agent.run import PaperPortfolio
 
 
 def test_paper_portfolio_starts_with_ten_thousand_usd():
